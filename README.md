@@ -10,7 +10,7 @@ example,
 3. Go to http://localhost:8000/index.html
 
 ## Demo
-[Scaffold Command Line Generator](http://k90j1.github.io/FormatterMarkdownUrls)
+[Formatter Markdown Urls](http://k90j1.github.io/FormatterMarkdownUrls)
 
 ## Links
 
