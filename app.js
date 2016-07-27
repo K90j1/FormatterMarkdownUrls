@@ -7,197 +7,102 @@
  * http://opensource.org/licenses/MIT
  */
 
-var Rows = React.createClass({
-    /**
-     * Get select option values
-     *
-     * @this {Rows}
-     * @param column {string}
-     * @param lineNumber {int}
-     * @return {string}
-     */
-    createItem: function (column, lineNumber) {
-        var columnPair = column.split(',');
-        return <li>
-            <label>
-            カラム名
-                <small> - Column Name </small>
-            :&nbsp;
-                <input type="text" value={columnPair[0]} onChange={this.props.handleInputChange.bind(null, lineNumber + ',column')} />
-            </label>
-        &nbsp;/&nbsp;
-            <label>
-            カラムタイプ<small> - Column Type </small>:&nbsp;
-                <select value={columnPair[1]} onChange={this.props.handleInputChange.bind(null, lineNumber + ',columnType')}>
-                {
-                    (this.props.columnTypeOptions || []).map(function (value) {
-                        return (
-                            <option value={value}>{value}</option>
-                        );
-                    })
-                }
-                </select></label>
-            &nbsp;
-        <label><small> Index </small>:&nbsp;
-                <select id="indexOptions" value={columnPair[2]} onChange={this.props.handleInputChange.bind(null, lineNumber + ',indexType')}>
-                    {
-                        (this.props.indexTypeOptions || []).map(function (value) {
-                            var data = ":" + value;
-                            if(value.length < 1)
-                                data = "";
-                            return (
-                                <option value={data}>{value}</option>
-                            );
-                        })
-                    }
-                </select></label>&nbsp;
-        <a href="#" onClick={this.props.handleDelete.bind(null, column)}>
-            <button className="btn btn-default btn-sm">delete</button>
-        </a>
-        </li>;
-    },
-    render: function () {
-        return <ul>{this.props.rows.map(this.createItem)}</ul>;
-    }
-});
-
 /**
  * Generator class
  */
 var Generator = React.createClass({
-    getInitialState: function () {
-        return {rows: ["NAME,string,"], table: "M_TABLE", column: "NAME", columnType: "string", indexType: ""
-        };
-    },
+	getInitialState: function () {
+		return {
+			table: "Formatter Markdown Urls\nhttp://pi.local/Community/ConvertMdUrl/",
+			result: "[Formatter Markdown Urls](http://pi.local/Community/ConvertMdUrl/)",
+			flag: "\\n"
+		};
+	},
 
-    /**
-     * Get select option values
-     *
-     * @this {Generator}
-     * @return {columnTypeOptions: Array, indexTypeOptions: Array, }
-     */
-    getDefaultProps: function () {
-        return {
-            columnTypeOptions: ["string"
-                , "text"
-                , "integer"
-                , "float"
-                , "decimal"
-                , "datetime"
-                , "timestamp"
-                , "time"
-                , "date"
-                , "binary"
-                , "boolean"
-                , "references"
-                , "primary_key"],
-            indexTypeOptions: [""
-                , "index"
-                , "uniq"]
-        };
-    },
+	/**
+	 * Get select option values
+	 *
+	 * @this {Generator}
+	 * @return {columnTypeOptions: Array, indexTypeOptions: Array, }
+	 */
+	getDefaultProps: function () {
+		return {
+			indexTypeOptions: [
+				"\\n"
+				, "\\t"]
+		};
+	},
 
-    /**
-     * Get button event
-     *
-     * @this {Generator}
-     * @return void
-     * @param itemToDelete {object}
-     */
-    handleDelete: function (itemToDelete) {
-        var newItems = _.reject(this.state.rows, function (item) {
-            return item == itemToDelete
-        });
-        this.setState({rows: newItems});
-    },
+	/**
+	 * Get onChange event
+	 *
+	 * @this {Generator}
+	 * @return void
+	 * @param event {object} input filed
+	 * @param label {string}
+	 */
+	handleInputChange: function (label, event) {
+		var text = "";
+		var delimiter = this.state.flag;
+		if (label == "flag") {
+			this.setState({flag: event.target.value});
+			delimiter = event.target.value;
+			text = this.state.table.replace(/\r\n|\r/g, "\n");
+		} else {
+			this.setState({table: event.target.value});
+			text = event.target.value.replace(/\r\n|\r/g, "\n");
+		}
+		var dataArray = splitByLine(text, delimiter);
+		for (var i = 0; i < dataArray.length; i++) {
+			if (dataArray[i].match(/^http/)) {
+				dataArray[i] = "(" + dataArray[i] + ")";
+			} else {
+				dataArray[i] = "[" + dataArray[i] + "]";
+			}
+			dataArray[i] = excpectionFormat(dataArray[i]);
+		}
+		this.setState({result: combineByLine(dataArray)});
+		highlightBlock();
+	},
 
-    /**
-     * Get submit event
-     *
-     * @this {Generator}
-     * @return void
-     * @param event {object}
-     */
-    handleSubmit: function (event) {
-        event.preventDefault();
-        var nextItems = this.state.rows.concat([this.state.column + "," + this.state.columnType + "," + this.state.indexType]);
-        this.setState({rows: nextItems});
-        highlightBlock();
-    },
-
-    /**
-     * Get onChange event
-     *
-     * @this {Generator}
-     * @return void
-     * @param event {object} input filed
-     * @param label {string}
-     */
-    handleInputChange: function (label, event) {
-        if(label == "table"){
-            this.setState({table: event.target.value});
-        }else{
-            var lineLabel = label.split(',');
-            var row = this.state.rows[lineLabel[0]].split(',');
-            if (lineLabel[1] == "column") {
-                row[0] = event.target.value;
-            } else if(lineLabel[1] == "columnType") {
-                row[1] = event.target.value;
-            } else {
-                row[2] = event.target.value;
-            }
-            this.state.rows[lineLabel[0]] = row[0] + "," + row[1] + "," + row[2];
-            this.setState({rows: this.state.rows});
-        }
-        highlightBlock();
-    },
-
-    /**
-     * Rendering input forms and add button
-     *
-     * @this {Generator}
-     * @return {string}
-     */
-    render: function () {
-        var table = this.state.table;
-        var rows = this.state.rows;
-        return (
-            <div>
-                <pre>
-                    <code className="ruby">rails generate scaffold {table}&nbsp;
-                    {this.handleInputChange.bind(null, 'rows')}
-                    {
-                        (rows || []).map(function (values) {
-                            var pair = values.split(',');
-                            return (
-                                pair[0] + ":" + pair[1] + pair[2] + " "
-                                );
-                        })
-                    }
-                    </code>
-                </pre>
-                <p>
-                    <label>
-                    テーブル名
-                        <small> - Table Name </small>
-                    :&nbsp;
-                        <input type="text" value={table} onChange={this.handleInputChange.bind(null, 'table')} />
-                    </label>
-                </p>
-                <Rows rows={this.state.rows}
-                handleDelete={this.handleDelete}
-                columnTypeOptions={this.props.columnTypeOptions}
-                indexTypeOptions={this.props.indexTypeOptions}
-                handleInputChange={this.handleInputChange}/>
-                <div className="row">
-                    <div className="col-md-9"></div>
-                    <form onSubmit={this.handleSubmit}>
-                        <button className="btn btn-primary btn-lg">{'Add #' + (this.state.rows.length + 1)}</button>
-                    </form>
-                </div>
-            </div>
-            );
-    }
+	/**
+	 * Rendering input forms and add button
+	 *
+	 * @this {Generator}
+	 * @return {string}
+	 */
+	render: function () {
+		var table = this.state.table;
+		var result = this.state.result;
+		var flag = this.state.flag;
+		return (
+			<form class="form-horizontal">
+				<h2> 1. Set Delimiter</h2>
+				<div class="form-group">
+					<select class="form-control" id="indexOptions" value={flag}
+									onChange={this.handleInputChange.bind(null,  'flag')}>
+						{
+							(this.props.indexTypeOptions || []).map(function (value) {
+								return (
+									<option value={value}>{value}</option>
+								);
+							})
+						}
+					</select>
+				</div>
+				<h2> 2. Set Text Fields</h2>
+				<div class="form-group">
+						<textarea class="form-control" rows="6" type="text" value={table}
+											onChange={this.handleInputChange.bind(null,'table')}/>
+				</div>
+				<div>
+					<pre>
+						<code className="markdown">{result}</code>
+					</pre>
+				</div>
+			</form>
+		);
+	}
 });
 
 /**
@@ -206,8 +111,8 @@ var Generator = React.createClass({
  * @return void
  */
 React.render(
-    <Generator />
-    , document.getElementById('container'));
+	<Generator />
+	, document.getElementById('container'));
 
 /**
  * Delayed exec highlightBlock()
@@ -215,8 +120,45 @@ React.render(
  * @return void
  */
 function highlightBlock() {
-    var aCodes = document.getElementsByTagName('pre');
-    for (var i = 0; i < aCodes.length; i++) {
-        hljs.highlightBlock(aCodes[i]);
-    }
+	var aCodes = document.getElementsByTagName('pre');
+	for (var i = 0; i < aCodes.length; i++) {
+		hljs.highlightBlock(aCodes[i]);
+	}
+}
+
+function splitByLine(text, flag) {
+	var lines = [];
+	if (flag == "\\n") {
+		lines = text.split("\n");
+	} else {
+		lines = text.split("\t");
+	}
+	var outArray = [];
+	for (var i = 0; i < lines.length; i++) {
+		if (lines[i] == '') {
+			continue;
+		}
+		outArray.push(lines[i]);
+	}
+	return outArray;
+}
+
+function combineByLine(array) {
+	var text = "";
+	for (var i = 0; i < array.length; i++) {
+		if (array[i].match(/\)$/)) {
+			text += array[i] + "\n";
+		} else {
+			text += array[i]
+		}
+	}
+	return text;
+}
+
+function excpectionFormat(text) {
+	text.replace(/^\[\[/g, "[");
+	text.replace(/]]$/g, "]");
+	text.replace(/^\(\(/g, "(");
+	text.replace(/\)\)$/g, ")");
+	return text;
 }
