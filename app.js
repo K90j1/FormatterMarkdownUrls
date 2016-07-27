@@ -13,8 +13,8 @@
 var Generator = React.createClass({
 	getInitialState: function () {
 		return {
-			table: "Formatter Markdown Urls\nhttp://pi.local/Community/ConvertMdUrl/",
-			result: "[Formatter Markdown Urls](http://pi.local/Community/ConvertMdUrl/)",
+			table: "Formatter Markdown Urls\nhttps://k90j1.github.io/FormatterMarkdownUrls/",
+			result: "[Formatter Markdown Urls](https://k90j1.github.io/FormatterMarkdownUrls/)",
 			flag: "\\n"
 		};
 	},
