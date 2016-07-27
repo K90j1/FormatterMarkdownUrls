@@ -90,12 +90,13 @@ var Generator = React.createClass({
 						}
 					</select>
 				</div>
-				<h2> 2. Set Text Fields</h2>
+				<h2> 2. Set Fields</h2>
 				<div class="form-group">
 						<textarea class="form-control" rows="6" type="text" value={table}
 											onChange={this.handleInputChange.bind(null,'table')}/>
 				</div>
 				<div>
+					<h2> 3. Copy Result</h2>
 					<pre>
 						<code className="markdown">{result}</code>
 					</pre>
