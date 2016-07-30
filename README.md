@@ -4,7 +4,7 @@
 1. git clone git@github.com:K90j1/FormatterMarkdownUrls
 2. Go to http://localhost/index.html
 
-example,
+### example
 1. Get All files
 2. Type to terminal  $ python -m SimpleHTTPServer
 3. Go to http://localhost:8000/index.html
