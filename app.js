@@ -14,8 +14,9 @@ var Generator = React.createClass({
 	getInitialState: function () {
 		return {
 			table: "Formatter Markdown Urls\nhttps://k90j1.github.io/FormatterMarkdownUrls/",
-			result: "[Formatter Markdown Urls](https://k90j1.github.io/FormatterMarkdownUrls/)",
-			flag: "\\n"
+			result: "* [Formatter Markdown Urls](https://k90j1.github.io/FormatterMarkdownUrls/)",
+			flag: "\\n",
+			is_list: "true"
 		};
 	},
 
@@ -29,7 +30,10 @@ var Generator = React.createClass({
 		return {
 			indexTypeOptions: [
 				"\\n"
-				, "\\t"]
+				, "\\t"],
+			listOptions: [
+				"true"
+				, "false"]
 		};
 	},
 
@@ -44,25 +48,36 @@ var Generator = React.createClass({
 	handleInputChange: function (label, event) {
 		var text = "";
 		var delimiter = this.state.flag;
+		var is_list = this.state.is_list;
 		if (label == "flag") {
 			this.setState({flag: event.target.value});
 			delimiter = event.target.value;
-			text = this.state.table.replace(/\r\n|\r/g, "\n");
+			text = exceptionFormat(this.state.table);
+		} else if(label == "is_list"){
+			this.setState({is_list: event.target.value});
+			is_list = event.target.value;
+			text = exceptionFormat(this.state.table);
 		} else {
 			this.setState({table: event.target.value});
-			text = event.target.value.replace(/\r\n|\r/g, "\n");
+			text = exceptionFormat(event.target.value);
 		}
 		var dataArray = splitByLine(text, delimiter);
 		for (var i = 0; i < dataArray.length; i++) {
 			if (dataArray[i].match(/^http/)) {
 				dataArray[i] = "(" + dataArray[i] + ")";
 			} else {
-				dataArray[i] = "[" + dataArray[i] + "]";
+				if(is_list == "true"){
+					dataArray[i] = "* [" + dataArray[i] + "]";
+				}else{
+					dataArray[i] = "[" + dataArray[i] + "]";
+				}
 			}
-			dataArray[i] = excpectionFormat(dataArray[i]);
+			dataArray[i] = dataArray[i];
 		}
 		this.setState({result: combineByLine(dataArray)});
-		highlightBlock();
+		if(label == "table"){
+			highlightBlock();
+		}
 	},
 
 	/**
@@ -75,6 +90,7 @@ var Generator = React.createClass({
 		var table = this.state.table;
 		var result = this.state.result;
 		var flag = this.state.flag;
+		var is_list = this.state.is_list;
 		return (
 			<form class="form-horizontal">
 				<h2> 1. Set Delimiter</h2>
@@ -96,7 +112,20 @@ var Generator = React.createClass({
 											onChange={this.handleInputChange.bind(null,'table')}/>
 				</div>
 				<div>
-					<h2> 3. Copy Result</h2>
+					<h2> 3. Add List Prefix</h2>
+					<select class="form-control" id="listOptions" value={is_list}
+									onChange={this.handleInputChange.bind(null,  'is_list')}>
+						{
+							(this.props.listOptions || []).map(function (value) {
+								return (
+									<option value={value}>{value}</option>
+								);
+							})
+						}
+					</select>
+				</div>
+				<div>
+					<h2> 4. Copy Result</h2>
 					<pre>
 						<code className="markdown">{result}</code>
 					</pre>
@@ -156,10 +185,11 @@ function combineByLine(array) {
 	return text;
 }
 
-function excpectionFormat(text) {
-	text.replace(/^\[\[/g, "[");
-	text.replace(/]]$/g, "]");
-	text.replace(/^\(\(/g, "(");
-	text.replace(/\)\)$/g, ")");
+function exceptionFormat(text) {
+	text = text.replace(/\r\n|\r/g, "\n");
+	text = text.replace(/\[/g, "");
+	text = text.replace(/]/g, "");
+	text = text.replace(/\(/g, "");
+	text = text.replace(/\)/g, "");
 	return text;
 }
